@@ -15,6 +15,13 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
+    pub fn parse(&mut self) -> Option<Expr> {
+        match self.expression() {
+            Ok(expr) => Some(expr),
+            Err(_) => None,
+        }
+    }
+
     fn expression(&mut self) -> Result<Expr, TikError> {
         self.equality()
     }
@@ -110,15 +117,38 @@ impl Parser {
             return Ok(Expr::Grouping(GroupingExpr {expression: Box::new(expr) }));
         }
 
-        Err(TikError::error(0, "Failed to Parse".to_string()))
+        Err(TikError::error(0, "Expect Expression".to_string()))
     }
 
     fn consume(&mut self, ttype: TokenType, message: String) -> Result<Token, TikError> {
         if self.check(ttype) {
             Ok(self.advance())
         } else {
-            let p = self.peek();
-            Err(TikError::error(p.line, message))
+            Err(Parser::error(self.peek(), message))
+            //Err(TikError::error(p.line, message))
+        }
+    }
+
+    fn synchronize(&mut self) {
+        let _ = self.advance();
+
+        while !self.is_at_end() {
+            if self.previous().ttype == TokenType::SemiColon {
+                return;
+            }
+
+            match self.peek().ttype {
+                TokenType::Class | 
+                TokenType::Fun |
+                TokenType::Var |
+                TokenType::For |
+                TokenType::If |
+                TokenType::While |
+                TokenType::Print |
+                TokenType::Return=> { return },
+                _ => {},
+            }
+            let _ = self.advance();
         }
     }
 
@@ -157,6 +187,10 @@ impl Parser {
 
     fn previous(&self) -> Token {
         self.tokens.get(self.current - 1).unwrap().clone()
+    }
+
+    fn error(token: Token, message: String) -> TikError {
+        TikError::error_parser(token, message)
     }
 
 }

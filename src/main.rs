@@ -10,17 +10,18 @@ use error::*;
 use scanner::*;
 use expr::*;
 use astprinter::*;
+use parser::*;
+use token::*;
 
 use std::io::{self, stdout, Write, BufRead};
 use std::fs;
 use std::env::args;
 
-use crate::token::{Object, Token};
-use crate::token_type::TokenType;
 
 
 fn main() {
 
+    /*
     let expression = Expr::Binary(BinaryExpr {
         left: Box::new(Expr::Unary(UnaryExpr {
             operator: Token {
@@ -48,6 +49,7 @@ fn main() {
 
     let printer = AstPrinter {};
     println!("{}", printer.print(&expression).unwrap());
+    */
 
     let args: Vec<String> = args().collect();
     println!("args: {:?}", args);
@@ -101,6 +103,16 @@ fn run_prompt() {
 fn run(source: String) -> Result<(), TikError> {
     let mut scanner = Scanner::new(source);
     let tokens = scanner.scan_tokens()?;
+    let mut parser = Parser::new(tokens.to_vec());
+
+    match parser.parse() {
+        Some(expr) => {
+            let printer = AstPrinter {};
+            let p = printer.print(&expr)?;
+            println!("{}", p);
+        },
+        None => {},
+    }
 
     for token in tokens {
         println!("Token: {:?}", token);
@@ -108,4 +120,3 @@ fn run(source: String) -> Result<(), TikError> {
 
     Ok(())
 }
-

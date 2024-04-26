@@ -1,15 +1,36 @@
+use crate::token::*;
+use crate::token_type::*;
+
 #[derive(Debug)]
 pub struct TikError {
+    token: Option<Token>,
     line: usize,
     message: String,
 }
 
 impl TikError {
     pub fn error(line: usize, message: String) -> TikError {
-        TikError { line, message }
+        TikError { token: None, line, message }
+    }
+
+    pub fn error_parser(token: Token, message: String) -> TikError {
+        let e = TikError {
+            token: Some(token.clone()),
+            line: token.line, 
+            message };
+        e.report("".to_string());
+        e
     }
 
     pub fn report(&self, loc: String) {
-        eprintln!("[line {}] Erro {}: {}", self.line, loc, self.message);
+        if let Some(token) = &self.token {
+            if token.ttype == TokenType::Eof {
+                eprint!("{} at end {}", token.line, self.message);
+            } else {
+                eprint!("{} at '{}' {}", token.line, token.lexeme, self.message);
+            }
+        } else {
+            eprintln!("[line {}] Erro {}: {}", self.line, loc, self.message);
+        }
     }
 }
