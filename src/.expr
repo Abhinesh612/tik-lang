@@ -1,0 +1,59 @@
+use crate::token::*;
+use crate::error::*;
+
+pub enum Expr {
+    Binary(BinaryExpr),
+    Grouping(GroupExpr),
+    Literal(LiteralExpr),
+    Unary(UnaryExpr),
+}
+
+pub struct BinaryExpr {
+    left: Box<Expr>,
+    operator: Token,
+    right: Box<Expr>,
+}
+
+pub struct GroupExpr {
+    expression: Box<Expr>,
+}
+
+pub struct LiteralExpr {
+    value: Option<Object>,
+}
+
+pub struct UnaryExpr {
+    operator: Token,
+    right: Box<Expr>,
+}
+
+pub trait ExprVisitor<T> {
+    fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<T, TikError>;
+    fn visit_group_expr(&self, expr: &GroupExpr) -> Result<T, TikError>;
+    fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<T, TikError>;
+    fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<T, TikError>;
+}
+
+impl BinaryExpr{
+    fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, TikError> {
+        visitor.visit_binary_expr(self)
+    }
+}
+
+impl GroupExpr{
+    fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, TikError> {
+        visitor.visit_group_expr(self)
+    }
+}
+
+impl LiteralExpr{
+    fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, TikError> {
+        visitor.visit_literal_expr(self)
+    }
+}
+
+impl UnaryExpr{
+    fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, TikError> {
+        visitor.visit_unary_expr(self)
+    }
+}

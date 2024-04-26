@@ -1,0 +1,8 @@
+() /*bc*/
+// This is a comment 
+(( )) {} // group stuff
+/* this is  a block comment 
+ this is new line in block comment
+ Checking stuff out*/
+
++!
