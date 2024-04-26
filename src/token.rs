@@ -2,7 +2,7 @@ use crate::token_type::*;
 use std::fmt;
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Object {
     Num(f64),
     Str(String),
@@ -23,7 +23,7 @@ impl fmt::Display for Object {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub ttype: TokenType,
     pub lexeme: String,

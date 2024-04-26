@@ -1,14 +1,15 @@
 use crate::token_type::*;
 use crate::token::*;
-use crate::BinaryExpr;
-use crate::Expr;
 use crate::TikError;
+use crate::expr::*;
 
+#[derive(Clone)]
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
 }
 
+#[allow(dead_code)]
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Parser {
         Parser { tokens, current: 0 }
@@ -22,8 +23,8 @@ impl Parser {
         let mut expr = self.comparision()?;
 
         while self.is_match(&[TokenType::BangEqual, TokenType::EqualEqual]) {
-            let operator = self.pervious();
-            let right = self.comparision();
+            let operator = self.previous();
+            let right = self.comparision()?;
             expr = Expr::Binary(BinaryExpr {
                 left: Box::new(expr),
                 operator,
@@ -34,16 +35,98 @@ impl Parser {
     }
 
     fn comparision(&mut self) -> Result<Expr, TikError> {
-        let mut expr = self.term();
+        let mut expr = self.term()?;
 
-        while (is_match)
+        while self.is_match(&[TokenType::Greater, TokenType:: GreaterEqual, TokenType::Less, TokenType::LessEqual]) {
+            let operator = self.previous();
+            let right = self.term()?;
+            expr = Expr::Binary(BinaryExpr {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            });
+        }
+        Ok(expr)
+    }
+
+    fn term(&mut self) -> Result<Expr, TikError> {
+        let mut expr = self.factor()?;
+
+        while self.is_match(&[TokenType::Minus, TokenType::Plus]) {
+            let operator = self.previous();
+            let right = self.factor()?;
+            expr = Expr::Binary(BinaryExpr {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            });
+        }
+        Ok(expr)
+    }
+
+    fn factor(&mut self) -> Result<Expr, TikError> {
+        let mut expr = self.unary()?;
+
+        while self.is_match(&[TokenType::Slash, TokenType::Star]) {
+            let operator = self.previous();
+            let right = self.unary()?;
+            expr = Expr::Binary(BinaryExpr {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            });
+        }
+        Ok(expr)
+    }
+
+    fn unary(&mut self) -> Result<Expr, TikError> {
+        if self.is_match(&[TokenType::Bang, TokenType::Minus]) {
+            let operator = self.previous();
+            let right = self.unary()?;
+            return Ok(Expr::Unary(UnaryExpr { operator, right: Box::new(right) }));
+        }
+
+        Ok(self.primary()?)
+    }
+
+    fn primary(&mut self) -> Result<Expr, TikError> {
+        if self.is_match(&[TokenType::False]) {
+            return Ok(Expr::Literal(LiteralExpr {value: Some(Object::False)}));
+        }
+        if self.is_match(&[TokenType::True]) {
+            return Ok(Expr::Literal(LiteralExpr {value: Some(Object::True)}));
+        }
+        if self.is_match(&[TokenType::Nil]) {
+            return Ok(Expr::Literal(LiteralExpr {value: Some(Object::Nil)}));
+        }
+
+        if self.is_match(&[TokenType::Number, TokenType::String]) {
+            return Ok(Expr::Literal(LiteralExpr {value: self.previous().literal}))
+        }
+
+        if self.is_match(&[TokenType::LeftParen]) {
+            let expr = self.expression()?;
+            let _ = self.consume(TokenType::RightParen, "Expect '(' after expression".to_string());
+            return Ok(Expr::Grouping(GroupingExpr {expression: Box::new(expr) }));
+        }
+
+        Err(TikError::error(0, "Failed to Parse".to_string()))
+    }
+
+    fn consume(&mut self, ttype: TokenType, message: String) -> Result<Token, TikError> {
+        if self.check(ttype) {
+            Ok(self.advance())
+        } else {
+            let p = self.peek();
+            Err(TikError::error(p.line, message))
+        }
     }
 
     fn is_match(&mut self, types: &[TokenType]) -> bool {
-        for type in &types {
-            if self.check(type) {
+        for ttype in types {
+            if self.check(*ttype) {
                 self.advance();
-                true
+                return true;
             }
         }
         false
@@ -65,15 +148,15 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
-        self.peek() == TokenType::Eof
+        self.peek().ttype == TokenType::Eof
     }
 
     fn peek(&self) -> Token {
-        self.tokens.get(self.current)
+        self.tokens.get(self.current).unwrap().clone()
     }
 
     fn previous(&self) -> Token {
-        self.tokens.get(self.current - 1)
+        self.tokens.get(self.current - 1).unwrap().clone()
     }
 
 }
