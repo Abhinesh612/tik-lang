@@ -5,6 +5,7 @@ mod scanner;
 mod expr;
 mod astprinter;
 mod parser;
+mod interpreter;
 
 use error::*;
 use scanner::*;
@@ -106,6 +107,16 @@ fn run(source: String) -> Result<(), TikError> {
     let mut parser = Parser::new(tokens.to_vec());
 
     match parser.parse() {
+        Ok(expr) => {
+            let printer = AstPrinter {};
+            let p = printer.print(&expr)?;
+            println!("{}", p);
+        },
+        Err(_) => { },
+    }
+
+    /*
+    match parser.parse() {
         Some(expr) => {
             let printer = AstPrinter {};
             let p = printer.print(&expr)?;
@@ -113,6 +124,7 @@ fn run(source: String) -> Result<(), TikError> {
         },
         None => {},
     }
+    */
 
     for token in tokens {
         println!("Token: {:?}", token);

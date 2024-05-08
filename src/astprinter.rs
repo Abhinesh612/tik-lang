@@ -9,10 +9,10 @@ impl AstPrinter {
     }
 
     fn parenthesize(&self, name: &String, exprs: &[&Box<Expr>]) -> Result<String, TikError> {
-        let mut builder = format!("({name} ");
+        let mut builder = format!("({name}");
 
         for expr in exprs {
-            builder = format!("{builder} {} ", expr.accept(self).unwrap());
+            builder = format!("{builder} {}", expr.accept(self).unwrap());
         }
 
         builder = format!("{builder})");

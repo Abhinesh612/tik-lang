@@ -15,11 +15,14 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Option<Expr> {
+    pub fn parse(&mut self) -> Result<Expr, TikError> {
+        self.expression()
+        /*
         match self.expression() {
             Ok(expr) => Some(expr),
             Err(_) => None,
         }
+        */
     }
 
     fn expression(&mut self) -> Result<Expr, TikError> {
@@ -113,11 +116,12 @@ impl Parser {
 
         if self.is_match(&[TokenType::LeftParen]) {
             let expr = self.expression()?;
-            let _ = self.consume(TokenType::RightParen, "Expect '(' after expression".to_string());
+            let _ = self.consume(TokenType::RightParen, "Expect ')' after expression".to_string())?;
             return Ok(Expr::Grouping(GroupingExpr {expression: Box::new(expr) }));
         }
 
-        Err(TikError::error(0, "Expect Expression".to_string()))
+        Err(Parser::error(self.peek(), "Expect Expression".to_string()))
+        //Err(TikError::error(self.peek().line, "Expect Expression".to_string()))
     }
 
     fn consume(&mut self, ttype: TokenType, message: String) -> Result<Token, TikError> {

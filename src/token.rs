@@ -1,14 +1,66 @@
 use crate::token_type::*;
 use std::fmt;
+use std::ops::*;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     Num(f64),
     Str(String),
     Nil,
     True,
     False,
+    ArithmeticException,
+}
+
+impl Sub for Object {
+    type Output = Object;
+    fn sub(self, rhs: Self) -> Self::Output {
+       match (self, rhs) {
+           (Object::Num(left), Object::Num(right)) => {Object::Num(left - right)},
+           _ => {Object::ArithmeticException},
+       }
+    }
+}
+
+impl Div for Object {
+    type Output = Object;
+    fn div(self, rhs: Self) -> Self::Output {
+       match (self, rhs) {
+           (Object::Num(left), Object::Num(right)) => {Object::Num(left / right)},
+           _ => {Object::ArithmeticException},
+       }
+    }
+}
+
+impl Mul for Object {
+    type Output = Object;
+    fn mul(self, rhs: Self) -> Self::Output {
+       match (self, rhs) {
+           (Object::Num(left), Object::Num(right)) => {Object::Num(left * right)},
+           _ => {Object::ArithmeticException},
+       }
+    }
+}
+
+impl Add for Object {
+    type Output = Object;
+    fn add(self, rhs: Self) -> Self::Output {
+       match (self, rhs) {
+           (Object::Num(left), Object::Num(right)) => {Object::Num(left + right)},
+           (Object::Str(left), Object::Str(right)) => {Object::Str(format!("{left}{right}"))},
+           _ => {Object::ArithmeticException},
+       }
+    }
+}
+
+impl PartialOrd for Object {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match(self, other) {
+            (Object::Num(left), Object::Num(right)) => left.partial_cmp(right),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for Object {
@@ -19,6 +71,7 @@ impl fmt::Display for Object {
             Object::Nil    => write!(f, "nil"),
             Object::True   => write!(f, "true"),
             Object::False  => write!(f, "false"),
+            Object::ArithmeticException => panic!("Unreachable for printing"),
         }
     }
 }

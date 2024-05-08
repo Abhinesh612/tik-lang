@@ -25,12 +25,12 @@ impl TikError {
     pub fn report(&self, loc: String) {
         if let Some(token) = &self.token {
             if token.ttype == TokenType::Eof {
-                eprint!("{} at end {}", token.line, self.message);
+                eprintln!("{} at end {}", token.line, self.message);
             } else {
-                eprint!("{} at '{}' {}", token.line, token.lexeme, self.message);
+                eprintln!("{} at '{}' {}", token.line, token.lexeme, self.message);
             }
         } else {
-            eprintln!("[line {}] Erro {}: {}", self.line, loc, self.message);
+            eprintln!("[line {}] Error {}: {}", self.line, loc, self.message);
         }
     }
 }
