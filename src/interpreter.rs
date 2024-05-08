@@ -41,8 +41,21 @@ impl ExprVisitor<Object> for Interpreter {
         let left = self.evaluate(&expr.left)?;
         let right = self.evaluate(&expr.right)?;
 
-        match expr.operator.ttype {
+        let result: Result<Object, TikError> = match expr.operator.ttype {
             TokenType::Greater => {
+            /*
+                match (left, right) {
+                    (Object::Num(left), Object::Num(right)) => {
+                        if left > right {
+                            return Ok(Object::True);
+                        } else {
+                            return Ok(Object::False);
+                        }
+                    },
+                    _ => return Err(TikError::error(expr.operator.line, "Invalid expression".to_string()));,
+                }
+                */
+
                 if let Object::Num(left) = left {
                     if let Object::Num(right) = right {
                         if left > right {
@@ -152,7 +165,9 @@ impl ExprVisitor<Object> for Interpreter {
             _ => {
                 return Err(TikError::error(expr.operator.line, "Unreachable".to_string()));
             },
-        }
+        };
+
+        result
     }
 }
 
@@ -169,7 +184,10 @@ impl Interpreter {
         }
     }
 
-    fn is_equal(lhs: &Object, rhs: &Object) -> bool {
-        true
+    pub fn interpret(&self, expr: &Expr) -> bool {
+        match self.evaluate(&expr) {
+            Ok(v) => { println!("{}", v); return true; },
+            Err(e) => { e .report("".to_string()); return false; },
+        }
     }
 }

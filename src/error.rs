@@ -22,6 +22,15 @@ impl TikError {
         e
     }
 
+    pub fn runtime_error(token: Token, message: String) -> TikError {
+        let e = TikError {
+            token: Some(token.clone()),
+            line: token.line, 
+            message };
+        e.report("".to_string());
+        e
+    }
+
     pub fn report(&self, loc: String) {
         if let Some(token) = &self.token {
             if token.ttype == TokenType::Eof {

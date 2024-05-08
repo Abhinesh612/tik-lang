@@ -13,6 +13,7 @@ use expr::*;
 use astprinter::*;
 use parser::*;
 use token::*;
+use interpreter::*;
 
 use std::io::{self, stdout, Write, BufRead};
 use std::fs;
@@ -21,114 +22,85 @@ use std::env::args;
 
 
 fn main() {
-
-    /*
-    let expression = Expr::Binary(BinaryExpr {
-        left: Box::new(Expr::Unary(UnaryExpr {
-            operator: Token {
-                ttype: TokenType::Minus,
-                lexeme: "-".to_string(),
-                literal: None,
-                line: 1,
-            },
-            right: Box::new(Expr::Literal(LiteralExpr {
-                value: Some(Object::Num(123.0)),
-            })),
-        })),
-        operator: Token {
-            ttype: TokenType::Star,
-            lexeme: "*".to_string(),
-            literal: None,
-            line: 1,
-        },
-        right: Box::new(Expr::Grouping(GroupingExpr {
-            expression: Box::new(Expr::Literal(LiteralExpr {
-                value: Some(Object::Num(45.6)),
-            }))
-        }))
-    });
-
-    let printer = AstPrinter {};
-    println!("{}", printer.print(&expression).unwrap());
-    */
-
     let args: Vec<String> = args().collect();
+    let  mut tik = Tik::new();
+
     println!("args: {:?}", args);
 
     if args.len() > 2 {
         println!("Usage: tik [script]");
         std::process::exit(64);
     } else if args.len() == 2 {
-        run_file(&args[1]).expect("run_file failed");
+        tik.run_file(&args[1]).expect("run_file failed");
     } else {
-        run_prompt();
+        tik.run_prompt();
     }
 }
 
 
-fn run_file(path: &String) -> io::Result<()>{
-    let buffer = fs::read_to_string(path)?;
+struct Tik {
+    interpreter: Interpreter,
+}
 
-    match run(buffer) {
-        Ok(_) => {},
-        Err(_) => {
-            std::process::exit(65);
+impl Tik {
+    pub fn new() -> Tik {
+        Tik { interpreter: Interpreter {} }
+    }
+
+    pub fn run_file(&self, path: &String) -> io::Result<()>{
+        let buffer = fs::read_to_string(path)?;
+
+        match self.run(buffer) {
+            Ok(_) => {},
+            Err(_) => {
+                std::process::exit(65);
+            }
         }
+
+        Ok(())
     }
-    
-    Ok(())
-}
 
-fn run_prompt() {
-    let stdin = io::stdin();
+    pub fn run_prompt(&self) {
+        let stdin = io::stdin();
 
-    print!("> ");
-    let _ = stdout().flush();
+        print!("> ");
+        let _ = stdout().flush();
 
-    for line in stdin.lock().lines() {
-        if let Ok(line) = line {
-            if line.is_empty() {
+        for line in stdin.lock().lines() {
+            if let Ok(line) = line {
+                if line.is_empty() {
+                    break;
+                }
+                match self.run(line) {
+                    Ok(_) => {},
+                    Err(_) => {
+                    },
+                }
+            } else {
                 break;
             }
-            match run(line) {
-                Ok(_) => {},
-                Err(_) => {
-                },
-            }
-        } else {
-            break;
         }
     }
-}
 
-fn run(source: String) -> Result<(), TikError> {
-    let mut scanner = Scanner::new(source);
-    let tokens = scanner.scan_tokens()?;
-    let mut parser = Parser::new(tokens.to_vec());
+    pub fn run(&self, source: String) -> Result<(), TikError> {
+        let mut scanner = Scanner::new(source);
+        let tokens = scanner.scan_tokens()?;
+        let mut parser = Parser::new(tokens.to_vec());
 
-    match parser.parse() {
-        Ok(expr) => {
-            let printer = AstPrinter {};
-            let p = printer.print(&expr)?;
-            println!("{}", p);
-        },
-        Err(_) => { },
+        match parser.parse() {
+            Ok(expr) => {
+                self.interpreter.interpret(&expr);
+                let printer = AstPrinter {};
+                let p = printer.print(&expr)?;
+                println!("{}", p);
+            },
+            Err(_) => { },
+        }
+
+        for token in tokens {
+            println!("Token: {:?}", token);
+        }
+
+        Ok(())
     }
-
-    /*
-    match parser.parse() {
-        Some(expr) => {
-            let printer = AstPrinter {};
-            let p = printer.print(&expr)?;
-            println!("{}", p);
-        },
-        None => {},
-    }
-    */
-
-    for token in tokens {
-        println!("Token: {:?}", token);
-    }
-
-    Ok(())
 }
