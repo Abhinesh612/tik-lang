@@ -1,7 +1,9 @@
 use crate::token_type::*;
 use crate::token::*;
-use crate::TikError;
+use crate::error::*;
 use crate::expr::*;
+use crate::stmt::*;
+use crate::Tik;
 
 #[derive(Clone)]
 pub struct Parser {
@@ -15,14 +17,38 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, TikError> {
-        self.expression()
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, TikError> {
+        let mut statements = Vec::new();
+        while !self.is_at_end() {
+            statements.push(self.statement()?)
+        }
+        Ok(statements)
+        //self.expression()
         /*
         match self.expression() {
             Ok(expr) => Some(expr),
             Err(_) => None,
         }
         */
+    }
+
+    fn statement(&mut self) -> Result<Stmt, TikError> {
+        if self.is_match(&[TokenType::Print]) {
+            return self.print_statement();
+        }
+        self.expression_statement()
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt, TikError> {
+        let value = self.expression()?;
+        self.consume(TokenType::SemiColon, "Expect ';' after value".to_string())?;
+        Ok(Stmt::Print(PrintStmt { expression: value } ))
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, TikError> {
+        let expr = self.expression()?;
+        self.consume(TokenType::SemiColon, "Expect ';' after value".to_string())?;
+        Ok(Stmt::Expression(ExpressionStmt { expression: expr} ))
     }
 
     fn expression(&mut self) -> Result<Expr, TikError> {

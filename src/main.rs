@@ -6,6 +6,7 @@ mod expr;
 mod astprinter;
 mod parser;
 mod interpreter;
+mod stmt;
 
 use error::*;
 use scanner::*;
@@ -88,7 +89,15 @@ impl Tik {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan_tokens()?;
         let mut parser = Parser::new(tokens.to_vec());
+        let statments = parser.parse()?;
 
+        if self.interpreter.interpret(&statments) {
+            return Ok(());
+        } else {
+            return Err(TikError::error(0, "".to_string())); 
+        }
+
+        /*
         match parser.parse() {
             Ok(expr) => {
                 self.interpreter.interpret(&expr);
@@ -108,5 +117,6 @@ impl Tik {
         */
 
         Ok(())
+    */
     }
 }

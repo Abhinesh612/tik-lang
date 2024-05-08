@@ -1,9 +1,23 @@
 use crate::expr::*;
+use crate::stmt::*;
 use crate::token::*;
 use crate::token_type::*;
 use crate::error::*;
 
 pub struct Interpreter {}
+
+impl StmtVisitor<()> for Interpreter {
+    fn visit_expression_stmt(&self, expr: &ExpressionStmt) -> Result<(),TikError> {
+       self.evaluate(&expr.expression)?;
+       Ok(())
+    }
+
+    fn visit_print_stmt(&self,expr: &PrintStmt) -> Result<(),TikError> {
+        let value = self.evaluate(&expr.expression)?;
+        println!("{value}");
+        Ok(()) 
+    }
+}
 
 impl ExprVisitor<Object> for Interpreter {
     fn visit_literal_expr(&self,expr: &LiteralExpr) -> Result<Object, TikError> {
@@ -184,10 +198,25 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&self, expr: &Expr) -> bool {
-        match self.evaluate(&expr) {
-            Ok(v) => { println!("{}", v); return true; },
-            Err(e) => { e .report("".to_string()); return false; },
+    fn execute(&self, stmt: &Stmt) -> Result<(), TikError> {
+        stmt.accept(self)
+    }
+
+    pub fn interpret(&self, stmts: &[Stmt]) -> bool {
+        let mut succ = true;
+        for stmt in stmts {
+            if let Err(e) = self.execute(stmt) {
+                e.report("".to_string());
+                succ = false;
+                break;
+            }
+            /*
+            match self.execute(stmt) {
+                Ok(v) => { println!("{}", v); continue; },
+                Err(e) => { e .report("".to_string()); succ = false; break; },
+            }
+            */
         }
+       succ 
     }
 }
