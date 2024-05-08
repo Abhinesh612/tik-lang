@@ -79,6 +79,8 @@ impl Tik {
             } else {
                 break;
             }
+            print!("> ");
+            let _ = stdout().flush();
         }
     }
 
@@ -90,16 +92,20 @@ impl Tik {
         match parser.parse() {
             Ok(expr) => {
                 self.interpreter.interpret(&expr);
+                /*
                 let printer = AstPrinter {};
                 let p = printer.print(&expr)?;
                 println!("{}", p);
+                */
             },
             Err(_) => { },
         }
 
+        /*
         for token in tokens {
             println!("Token: {:?}", token);
         }
+        */
 
         Ok(())
     }
